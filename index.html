@@ -7,18 +7,22 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
-    /* यहाँ आपका पुराना CSS रहेगा */
     body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 0; }
     .header { background: #0088cc; color: white; padding: 12px 15px; font-weight: bold; position: sticky; top: 0; z-index: 9999; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .logout-icon { color: white; font-size: 20px; cursor: pointer; padding: 5px; }
     .container { padding: 15px; max-width: 500px; margin: auto; }
     .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; }
     #loaderOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); display: none; justify-content: center; align-items: center; z-index: 99999; flex-direction: column; }
     .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0088cc; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
-    .hidden { display: none !important; }
-    input, select, button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1.5px solid #ddd; font-size: 14px; box-sizing: border-box; }
+    #distTabs { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding: 5px 0; width: 100%; }
     .tab-btn { flex: 1; min-width: 100px; padding: 12px 5px; border-radius: 10px; border: 2px solid #0088cc; background: white; color: #0088cc; font-weight: bold; font-size: 13px; cursor: pointer; display: none; }
     .tab-btn.active { background: #0088cc !important; color: white !important; }
     .res-box { background: white; border-radius: 15px; margin-top: 15px; padding: 15px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 5px solid #0088cc; text-align: left; }
+    .action-group { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: flex; gap: 5px; }
+    input, select, button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1.5px solid #ddd; font-size: 14px; box-sizing: border-box; }
+    .fab { position: fixed; bottom: 30px; right: 25px; width: 60px; height: 60px; background: #28a745; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 10000; }
+    .hidden { display: none !important; }
+    label { display: block; text-align: left; font-size: 11px; font-weight: bold; color: #555; margin: 8px 0 2px 5px; text-transform: uppercase; }
   </style>
 </head>
 <body onload="checkAuth()">
@@ -53,33 +57,70 @@
         <button class="tab-btn" id="tab2" onclick="switchDistrict(2)">Sonbhadra</button>
       </div>
       <div id="tehsilView" class="hidden"></div>
+      <div id="searchWrapper" class="hidden"><input type="text" id="searchValue" placeholder="खोजें..." oninput="handleSearchInput()"></div>
       <div id="mainContent" class="hidden"><div id="dataList"></div></div>
+    </div>
+    <button id="addFab" class="fab hidden" onclick="openForm()">+</button>
+  </div>
+
+  <div id="formPage" class="container hidden">
+    <div class="card">
+      <h3 id="formTitle">डेटा एंट्री</h3>
+      <div id="formFields" style="text-align:left;"></div>
+      <button onclick="saveData()" style="background:#28a745; color:white; font-weight:bold;">✅ सुरक्षित करें</button>
+      <button onclick="closeForm()" style="background:#95a5a6; color:white;">रद्द करें</button>
     </div>
   </div>
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec";
-    let curDist = -1;
+    let curDist = -1, curTeh = "", activeRole = "user";
 
-    async function callAPI(action, params = {}) {
+    // API CALL FUNCTIONS
+    async function apiGet(action, params = {}) {
       const url = new URL(SCRIPT_URL);
       url.searchParams.append('action', action);
-      for (const key in params) { url.searchParams.append(key, params[key]); }
-      const response = await fetch(url);
-      return await response.json();
+      for (const key in params) url.searchParams.append(key, params[key]);
+      const res = await fetch(url);
+      return await res.json();
     }
 
-    async function handleLogin() {
-      const m = document.getElementById('uMob').value, p = document.getElementById('uPin').value, reqMode = localStorage.getItem('reqMode'), dId = 'DEV-GITHUB';
-      showP("सत्यापित किया जा रहा है...");
-      const res = await callAPI('processLogin', {mob: m, pin: p, dId: dId, reqMode: reqMode});
+    async function apiPost(action, data) {
+      const res = await fetch(`${SCRIPT_URL}?action=${action}`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+      return await res.json();
+    }
+
+    // UI LOGIC
+    function showP(t) { document.getElementById('loaderOverlay').style.display = 'flex'; }
+    function hideP() { document.getElementById('loaderOverlay').style.display = 'none'; }
+    function getDevID() { let id = localStorage.getItem('device_id') || 'DEV-' + Math.random().toString(36).substr(2, 9).toUpperCase(); localStorage.setItem('device_id', id); return id; }
+
+    async function checkAuth() { 
+      const mob = localStorage.getItem('uM'); if (!mob) return;
+      showP();
+      const res = await apiGet('validateAndFetch', {mob: mob, dId: getDevID(), role: localStorage.getItem('activeRole')});
       hideP();
       if(res && res.success) {
-        localStorage.setItem('uM', m);
         localStorage.setItem('uN', res.name);
         localStorage.setItem('uDists', JSON.stringify(res.dists));
         fastInit();
-      } else { alert(res.msg || "लॉगिन असफल!"); }
+      } else { logout(); }
+    }
+
+    async function handleLogin() {
+      const m = document.getElementById('uMob').value, p = document.getElementById('uPin').value, r = localStorage.getItem('reqMode');
+      showP("लॉगिन...");
+      const res = await apiGet('processLogin', {mob: m, pin: p, dId: getDevID(), reqMode: r});
+      hideP();
+      if(res && res.success) {
+        localStorage.setItem('uM', m); localStorage.setItem('uN', res.name);
+        localStorage.setItem('activeRole', res.finalRole);
+        localStorage.setItem('uDists', JSON.stringify(res.dists));
+        fastInit();
+      } else { alert(res.msg); }
     }
 
     function fastInit() {
@@ -88,13 +129,37 @@
       document.getElementById('dashboard').classList.remove('hidden');
       document.getElementById('dashHeader').innerText = localStorage.getItem('uN');
       let allowed = JSON.parse(localStorage.getItem('uDists') || '[]');
-      [0, 1, 2].forEach(idx => {
-        document.getElementById('tab' + idx).style.display = (allowed.indexOf(idx) > -1) ? 'inline-block' : 'none';
-      });
+      [0,1,2].forEach(i => document.getElementById('tab'+i).style.display = (allowed.indexOf(i) > -1) ? 'inline-block' : 'none');
+      if (allowed.length > 0) switchDistrict(allowed[0]);
     }
 
-    function showP(t) { document.getElementById('loaderOverlay').style.display = 'flex'; }
-    function hideP() { document.getElementById('loaderOverlay').style.display = 'none'; }
+    async function switchDistrict(idx) {
+      curDist = idx; curTeh = ""; showP();
+      activeRole = localStorage.getItem('activeRole');
+      if(activeRole === 'admin') {
+        const h = await apiGet('fetchAdminUsers', {di: idx});
+        document.getElementById('dataList').innerHTML = h; hideP();
+        document.getElementById('addFab').classList.remove('hidden');
+      } else {
+        const ts = await apiGet('getTehsilNames', {idx: idx});
+        hideP();
+        let h = "<h4>तहसील चुनें:</h4>";
+        ts.forEach(t => h += `<button onclick="openTehsil('${t}')" style="background:white; border:1px solid #ddd; padding:15px; margin-bottom:5px; border-radius:10px; width:100%;">${t}</button>`);
+        document.getElementById('tehsilView').innerHTML = h;
+        document.getElementById('tehsilView').classList.remove('hidden');
+      }
+    }
+
+    async function openTehsil(t) {
+      curTeh = t; showP();
+      document.getElementById('tehsilView').classList.add('hidden');
+      document.getElementById('searchWrapper').classList.remove('hidden');
+      document.getElementById('mainContent').classList.remove('hidden');
+      const h = await apiGet('fetchTehsilData', {di: curDist, tn: t});
+      document.getElementById('dataList').innerHTML = h; hideP();
+      document.getElementById('addFab').classList.remove('hidden');
+    }
+
     function openLogin(m) { localStorage.setItem('reqMode', m); document.getElementById('loginChoice').classList.add('hidden'); document.getElementById('loginPage').classList.remove('hidden'); }
     function logout() { localStorage.clear(); location.reload(); }
     function goBack() { location.reload(); }
