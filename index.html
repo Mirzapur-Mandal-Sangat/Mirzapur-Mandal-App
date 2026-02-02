@@ -3,65 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Mirzapur Mandal Portal</title>
+  <title>Mirzapur Mandal App</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; width: 90%; max-width: 400px; }
-    h2 { color: #0088cc; margin-bottom: 25px; }
-    input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1.5px solid #ddd; box-sizing: border-box; }
-    button { width: 100%; padding: 15px; background: #0088cc; color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px; }
-    #msg { margin-top: 15px; font-size: 14px; color: red; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 0; }
+    .header { background: #0088cc; color: white; padding: 15px; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .container { padding: 15px; max-width: 500px; margin: auto; }
+    .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; }
+    input, button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1.5px solid #ddd; box-sizing: border-box; }
+    button { background: #0088cc; color: white; border: none; font-weight: bold; cursor: pointer; }
+    .res-box { background: white; border-radius: 15px; margin-top: 15px; padding: 15px; border-left: 5px solid #0088cc; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <h2>Mirzapur Mandal</h2>
-    <input type="text" id="mob" placeholder="Mobile / Email">
-    <input type="password" id="pin" placeholder="PIN">
-    <button onclick="handleLogin()">LOGIN</button>
-    <div id="msg"></div>
+  <div id="loginPage" class="container">
+    <div class="card">
+      <h2 style="color:#0088cc;">Mirzapur Mandal</h2>
+      <input type="text" id="uMob" placeholder="Mobile / Email">
+      <input type="password" id="uPin" placeholder="PIN">
+      <button onclick="handleLogin()">VERIFY & LOGIN</button>
+      <p id="loginMsg" style="color:red; font-size:12px;"></p>
+    </div>
+  </div>
+
+  <div id="dashboard" class="hidden">
+    <div class="header">MIRZAPUR MANDAL DASHBOARD</div>
+    <div class="container">
+      <h3 id="welcome"></h3>
+      <input type="text" id="search" placeholder="Search by Mobile or Form No..." oninput="searchData()">
+      <div id="dataList"></div>
+      <button onclick="location.reload()" style="background:#95a5a6;">LOGOUT</button>
+    </div>
   </div>
 
   <script>
-    // Aapka Google Webhook URL
-    const URL = "https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec";
+    let userSession = {};
 
     async function handleLogin() {
-      const mob = document.getElementById('mob').value;
-      const pin = document.getElementById('pin').value;
-      const msgDiv = document.getElementById('msg');
+      const mob = document.getElementById('uMob').value;
+      const pin = document.getElementById('uPin').value;
+      const msg = document.getElementById('loginMsg');
       
-      if(!mob || !pin) { msgDiv.innerText = "Kripya details bharein!"; return; }
-      
-      msgDiv.style.color = "#0088cc";
-      msgDiv.innerText = "Satyapit kiya ja raha hai...";
-
+      msg.innerText = "Processing...";
       try {
-        const response = await fetch(URL, {
+        const response = await fetch(SCRIPT_URL, {
           method: "POST",
-          body: JSON.stringify({
-            action: "login",
-            mob: mob,
-            pin: pin,
-            reqMode: "user",
-            dId: "GITHUB-APP"
-          })
+          body: JSON.stringify({ action: "login", mob: mob, pin: pin, dId: "GH-PWA", reqMode: "user" })
         });
-        
         const res = await response.json();
-        
         if(res.success) {
-          msgDiv.style.color = "green";
-          msgDiv.innerText = "Namaste " + res.name + "! Login Safal.";
-          // Yahan aap dashboard ka link dal sakte hain
-        } else {
-          msgDiv.style.color = "red";
-          msgDiv.innerText = res.msg || "Login asafal!";
-        }
-      } catch (e) {
-        msgDiv.style.color = "red";
-        msgDiv.innerText = "Server se judne mein dikkat aa rahi hai.";
-      }
+          userSession = res;
+          document.getElementById('loginPage').classList.add('hidden');
+          document.getElementById('dashboard').classList.remove('hidden');
+          document.getElementById('welcome').innerText = "Namaste, " + res.name;
+          searchData();
+        } else { msg.innerText = res.msg; }
+      } catch(e) { msg.innerText = "Error connecting to server."; }
+    }
+
+    async function searchData() {
+      const query = document.getElementById('search').value;
+      const list = document.getElementById('dataList');
+      // Sirf Mirzapur Mandal (Dist index 1) ke liye example
+      const response = await fetch(SCRIPT_URL, {
+        method: "POST",
+        body: JSON.stringify({ action: "fetchData", distIdx: 1, tehName: "Sadar", query: query })
+      });
+      const res = await response.json();
+      list.innerHTML = res.html;
     }
   </script>
 </body>
