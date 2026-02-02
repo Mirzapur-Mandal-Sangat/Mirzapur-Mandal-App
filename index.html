@@ -3,75 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
   <title>Mirzapur Mandal App</title>
   <style>
     body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 0; }
-    .header { background: #0088cc; color: white; padding: 15px; font-weight: bold; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .header { background: #0088cc; color: white; padding: 12px 15px; font-weight: bold; position: sticky; top: 0; z-index: 999; display: flex; justify-content: space-between; align-items: center; }
     .container { padding: 15px; max-width: 500px; margin: auto; }
     .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; }
-    input, button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1.5px solid #ddd; box-sizing: border-box; }
+    input, button, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1.5px solid #ddd; box-sizing: border-box; }
     button { background: #0088cc; color: white; border: none; font-weight: bold; cursor: pointer; }
+    #distTabs { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding: 5px 0; }
+    .tab-btn { flex: 1; min-width: 100px; padding: 10px; border-radius: 10px; border: 2px solid #0088cc; background: white; color: #0088cc; font-weight: bold; }
+    .tab-btn.active { background: #0088cc; color: white; }
     .res-box { background: white; border-radius: 15px; margin-top: 15px; padding: 15px; border-left: 5px solid #0088cc; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left; }
-    .hidden { display: none; }
+    .hidden { display: none !important; }
+    #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
   </style>
 </head>
 <body>
-  <div id="loginPage" class="container">
+  <div id="loader"><b>लोड हो रहा है...</b></div>
+
+  <div id="loginPage" class="container" style="margin-top:80px;">
     <div class="card">
-      <h2 style="color:#0088cc;">Mirzapur Mandal</h2>
+      <h2 style="color:#0088cc;">Login Mirzapur Mandal</h2>
       <input type="text" id="uMob" placeholder="Mobile / Email">
       <input type="password" id="uPin" placeholder="PIN">
-      <button onclick="handleLogin()">VERIFY & LOGIN</button>
-      <p id="loginMsg" style="color:red; font-size:12px;"></p>
+      <button onclick="handleLogin()">LOGIN</button>
     </div>
   </div>
 
   <div id="dashboard" class="hidden">
-    <div class="header">MIRZAPUR MANDAL DASHBOARD</div>
+    <div class="header"><span id="welcome">DASHBOARD</span><i class="fa fa-power-off" onclick="location.reload()"></i></div>
     <div class="container">
-      <h3 id="welcome"></h3>
-      <input type="text" id="search" placeholder="Search by Mobile or Form No..." oninput="searchData()">
-      <div id="dataList"></div>
-      <button onclick="location.reload()" style="background:#95a5a6;">LOGOUT</button>
+      <div id="distTabs">
+        <button class="tab-btn" id="tab0" onclick="switchDist(0)">Bhadohi</button>
+        <button class="tab-btn" id="tab1" onclick="switchDist(1)">Mirzapur</button>
+        <button class="tab-btn" id="tab2" onclick="switchDist(2)">Sonbhadra</button>
+      </div>
+      <div id="tehsilList"></div>
+      <div id="searchBar" class="hidden"><input type="text" id="search" placeholder="खोजें..." oninput="searchData()"></div>
+      <div id="dataView"></div>
     </div>
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec";
-    let userSession = {};
+    const API = "https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec";
+    let session = {}; let curD = -1; let curT = "";
 
     async function handleLogin() {
-      const mob = document.getElementById('uMob').value;
-      const pin = document.getElementById('uPin').value;
-      const msg = document.getElementById('loginMsg');
-      
-      msg.innerText = "Processing...";
+      const m = document.getElementById('uMob').value; const p = document.getElementById('uPin').value;
+      if(!m || !p) return alert("Fill data!");
+      document.getElementById('loader').style.display='flex';
       try {
-        const response = await fetch(SCRIPT_URL, {
-          method: "POST",
-          body: JSON.stringify({ action: "login", mob: mob, pin: pin, dId: "GH-PWA", reqMode: "user" })
-        });
-        const res = await response.json();
+        const r = await fetch(API, {method:'POST', body:JSON.stringify({action:'login', mob:m, pin:p, dId:'GH-PWA', reqMode:'user'})});
+        const res = await r.json();
+        document.getElementById('loader').style.display='none';
         if(res.success) {
-          userSession = res;
+          session = res;
           document.getElementById('loginPage').classList.add('hidden');
           document.getElementById('dashboard').classList.remove('hidden');
-          document.getElementById('welcome').innerText = "Namaste, " + res.name;
-          searchData();
-        } else { msg.innerText = res.msg; }
-      } catch(e) { msg.innerText = "Error connecting to server."; }
+          document.getElementById('welcome').innerText = res.name;
+          initUI();
+        } else alert(res.msg);
+      } catch(e) { alert("Error!"); document.getElementById('loader').style.display='none'; }
+    }
+
+    function initUI() {
+      session.dists.forEach(i => document.getElementById('tab'+i).classList.remove('hidden'));
+      switchDist(session.dists[0]);
+    }
+
+    function switchDist(idx) {
+      curD = idx; document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active', i===idx));
+      const ths = {0:["Gyanpur","Aurai","Bhadohi"], 1:["Sadar","Chunar","Lalganj","Marihan"], 2:["Ghorawal","Obra","Duddhi","Robertsganj"]};
+      let h = "<h4>तहसील चुनें:</h4>";
+      ths[idx].forEach(t => h+=`<button onclick="openTeh('${t}')" style="background:#fff; color:#0088cc; border:1px solid #ddd; margin-bottom:5px;">${t}</button>`);
+      document.getElementById('tehsilList').innerHTML = h;
+      document.getElementById('tehsilList').classList.remove('hidden');
+      document.getElementById('searchBar').classList.add('hidden');
+      document.getElementById('dataView').innerHTML = "";
+    }
+
+    function openTeh(t) {
+      curT = t; document.getElementById('tehsilList').classList.add('hidden');
+      document.getElementById('searchBar').classList.remove('hidden');
+      searchData();
     }
 
     async function searchData() {
-      const query = document.getElementById('search').value;
-      const list = document.getElementById('dataList');
-      // Sirf Mirzapur Mandal (Dist index 1) ke liye example
-      const response = await fetch(SCRIPT_URL, {
-        method: "POST",
-        body: JSON.stringify({ action: "fetchData", distIdx: 1, tehName: "Sadar", query: query })
-      });
-      const res = await response.json();
-      list.innerHTML = res.html;
+      const q = document.getElementById('search').value;
+      const res = await fetch(API, {method:'POST', body:JSON.stringify({action:'fetchData', distIdx:curD, tehName:curT, query:q})});
+      const data = await res.json();
+      document.getElementById('dataView').innerHTML = data.html;
     }
   </script>
 </body>
