@@ -4,98 +4,100 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-  <title>Mirzapur Mandal App</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
+    /* यहाँ आपका पुराना CSS रहेगा */
     body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 0; }
-    .header { background: #0088cc; color: white; padding: 12px 15px; font-weight: bold; position: sticky; top: 0; z-index: 999; display: flex; justify-content: space-between; align-items: center; }
+    .header { background: #0088cc; color: white; padding: 12px 15px; font-weight: bold; position: sticky; top: 0; z-index: 9999; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
     .container { padding: 15px; max-width: 500px; margin: auto; }
     .card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); text-align: center; }
-    input, button, select { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1.5px solid #ddd; box-sizing: border-box; }
-    button { background: #0088cc; color: white; border: none; font-weight: bold; cursor: pointer; }
-    #distTabs { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; padding: 5px 0; }
-    .tab-btn { flex: 1; min-width: 100px; padding: 10px; border-radius: 10px; border: 2px solid #0088cc; background: white; color: #0088cc; font-weight: bold; }
-    .tab-btn.active { background: #0088cc; color: white; }
-    .res-box { background: white; border-radius: 15px; margin-top: 15px; padding: 15px; border-left: 5px solid #0088cc; box-shadow: 0 4px 12px rgba(0,0,0,0.05); text-align: left; }
+    #loaderOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); display: none; justify-content: center; align-items: center; z-index: 99999; flex-direction: column; }
+    .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0088cc; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
     .hidden { display: none !important; }
-    #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); display: none; justify-content: center; align-items: center; z-index: 1000; }
+    input, select, button { width: 100%; padding: 14px; margin: 10px 0; border-radius: 12px; border: 1.5px solid #ddd; font-size: 14px; box-sizing: border-box; }
+    .tab-btn { flex: 1; min-width: 100px; padding: 12px 5px; border-radius: 10px; border: 2px solid #0088cc; background: white; color: #0088cc; font-weight: bold; font-size: 13px; cursor: pointer; display: none; }
+    .tab-btn.active { background: #0088cc !important; color: white !important; }
+    .res-box { background: white; border-radius: 15px; margin-top: 15px; padding: 15px; position: relative; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border-left: 5px solid #0088cc; text-align: left; }
   </style>
 </head>
-<body>
-  <div id="loader"><b>लोड हो रहा है...</b></div>
+<body onload="checkAuth()">
+  <div id="loaderOverlay"><div class="spinner"></div><p id="loaderText">लोड हो रहा है...</p></div>
 
-  <div id="loginPage" class="container" style="margin-top:80px;">
+  <div id="loginChoice" class="container" style="margin-top:80px;">
     <div class="card">
-      <h2 style="color:#0088cc;">Login Mirzapur Mandal</h2>
-      <input type="text" id="uMob" placeholder="Mobile / Email">
-      <input type="password" id="uPin" placeholder="PIN">
-      <button onclick="handleLogin()">LOGIN</button>
+      <h2 style="color:#0088cc; margin-bottom:30px;">Login Mirzapur Mandal</h2>
+      <button onclick="openLogin('user')" style="background:#0088cc; color:white; font-weight:bold;">👤 USER LOGIN</button>
+      <button onclick="openLogin('admin')" style="background:#34495e; color:white; margin-top:15px; font-weight:bold;">🔑 ADMIN LOGIN</button>
+    </div>
+  </div>
+
+  <div id="loginPage" class="container hidden" style="margin-top:50px;">
+    <div class="card">
+      <h3 id="loginTitle">LOGIN</h3>
+      <input type="text" id="uMob" placeholder="Mobile or Email">
+      <div id="pinField">
+        <input type="password" id="uPin" placeholder="PIN">
+        <button onclick="handleLogin()" style="background:#0088cc; color:white; font-weight:bold;">VERIFY ACCESS</button>
+      </div>
+      <button onclick="goBack()" style="background:#95a5a6; color:white; margin-top:10px;">BACK</button>
     </div>
   </div>
 
   <div id="dashboard" class="hidden">
-    <div class="header"><span id="welcome">DASHBOARD</span><i class="fa fa-power-off" onclick="location.reload()"></i></div>
+    <div class="header"><span id="dashHeader">PANEL</span><i class="fa-solid fa-power-off logout-icon" onclick="logout()"></i></div>
     <div class="container">
       <div id="distTabs">
-        <button class="tab-btn" id="tab0" onclick="switchDist(0)">Bhadohi</button>
-        <button class="tab-btn" id="tab1" onclick="switchDist(1)">Mirzapur</button>
-        <button class="tab-btn" id="tab2" onclick="switchDist(2)">Sonbhadra</button>
+        <button class="tab-btn" id="tab0" onclick="switchDistrict(0)">Bhadohi</button>
+        <button class="tab-btn" id="tab1" onclick="switchDistrict(1)">Mirzapur</button>
+        <button class="tab-btn" id="tab2" onclick="switchDistrict(2)">Sonbhadra</button>
       </div>
-      <div id="tehsilList"></div>
-      <div id="searchBar" class="hidden"><input type="text" id="search" placeholder="खोजें..." oninput="searchData()"></div>
-      <div id="dataView"></div>
+      <div id="tehsilView" class="hidden"></div>
+      <div id="mainContent" class="hidden"><div id="dataList"></div></div>
     </div>
   </div>
 
   <script>
-    const API = "https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec";
-    let session = {}; let curD = -1; let curT = "";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec";
+    let curDist = -1;
+
+    async function callAPI(action, params = {}) {
+      const url = new URL(SCRIPT_URL);
+      url.searchParams.append('action', action);
+      for (const key in params) { url.searchParams.append(key, params[key]); }
+      const response = await fetch(url);
+      return await response.json();
+    }
 
     async function handleLogin() {
-      const m = document.getElementById('uMob').value; const p = document.getElementById('uPin').value;
-      if(!m || !p) return alert("Fill data!");
-      document.getElementById('loader').style.display='flex';
-      try {
-        const r = await fetch(API, {method:'POST', body:JSON.stringify({action:'login', mob:m, pin:p, dId:'GH-PWA', reqMode:'user'})});
-        const res = await r.json();
-        document.getElementById('loader').style.display='none';
-        if(res.success) {
-          session = res;
-          document.getElementById('loginPage').classList.add('hidden');
-          document.getElementById('dashboard').classList.remove('hidden');
-          document.getElementById('welcome').innerText = res.name;
-          initUI();
-        } else alert(res.msg);
-      } catch(e) { alert("Error!"); document.getElementById('loader').style.display='none'; }
+      const m = document.getElementById('uMob').value, p = document.getElementById('uPin').value, reqMode = localStorage.getItem('reqMode'), dId = 'DEV-GITHUB';
+      showP("सत्यापित किया जा रहा है...");
+      const res = await callAPI('processLogin', {mob: m, pin: p, dId: dId, reqMode: reqMode});
+      hideP();
+      if(res && res.success) {
+        localStorage.setItem('uM', m);
+        localStorage.setItem('uN', res.name);
+        localStorage.setItem('uDists', JSON.stringify(res.dists));
+        fastInit();
+      } else { alert(res.msg || "लॉगिन असफल!"); }
     }
 
-    function initUI() {
-      session.dists.forEach(i => document.getElementById('tab'+i).classList.remove('hidden'));
-      switchDist(session.dists[0]);
+    function fastInit() {
+      document.getElementById('loginChoice').classList.add('hidden');
+      document.getElementById('loginPage').classList.add('hidden');
+      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('dashHeader').innerText = localStorage.getItem('uN');
+      let allowed = JSON.parse(localStorage.getItem('uDists') || '[]');
+      [0, 1, 2].forEach(idx => {
+        document.getElementById('tab' + idx).style.display = (allowed.indexOf(idx) > -1) ? 'inline-block' : 'none';
+      });
     }
 
-    function switchDist(idx) {
-      curD = idx; document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active', i===idx));
-      const ths = {0:["Gyanpur","Aurai","Bhadohi"], 1:["Sadar","Chunar","Lalganj","Marihan"], 2:["Ghorawal","Obra","Duddhi","Robertsganj"]};
-      let h = "<h4>तहसील चुनें:</h4>";
-      ths[idx].forEach(t => h+=`<button onclick="openTeh('${t}')" style="background:#fff; color:#0088cc; border:1px solid #ddd; margin-bottom:5px;">${t}</button>`);
-      document.getElementById('tehsilList').innerHTML = h;
-      document.getElementById('tehsilList').classList.remove('hidden');
-      document.getElementById('searchBar').classList.add('hidden');
-      document.getElementById('dataView').innerHTML = "";
-    }
-
-    function openTeh(t) {
-      curT = t; document.getElementById('tehsilList').classList.add('hidden');
-      document.getElementById('searchBar').classList.remove('hidden');
-      searchData();
-    }
-
-    async function searchData() {
-      const q = document.getElementById('search').value;
-      const res = await fetch(API, {method:'POST', body:JSON.stringify({action:'fetchData', distIdx:curD, tehName:curT, query:q})});
-      const data = await res.json();
-      document.getElementById('dataView').innerHTML = data.html;
-    }
+    function showP(t) { document.getElementById('loaderOverlay').style.display = 'flex'; }
+    function hideP() { document.getElementById('loaderOverlay').style.display = 'none'; }
+    function openLogin(m) { localStorage.setItem('reqMode', m); document.getElementById('loginChoice').classList.add('hidden'); document.getElementById('loginPage').classList.remove('hidden'); }
+    function logout() { localStorage.clear(); location.reload(); }
+    function goBack() { location.reload(); }
   </script>
 </body>
 </html>
