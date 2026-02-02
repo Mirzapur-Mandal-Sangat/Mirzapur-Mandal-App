@@ -1,1 +1,0 @@
-# Mirzapur-Mandal-App
