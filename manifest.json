@@ -1,14 +1,14 @@
 {
   "name": "Mirzapur Mandal Webbook",
   "short_name": "Webbook",
-  "description": "Mirzapur Mandal District Management System",
+  "description": "District Management System for Mirzapur, Bhadohi, and Sonbhadra",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#f4f7f9",
+  "background_color": "#ffffff",
   "theme_color": "#0088cc",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/1048/1048953.png",
+      "src": "icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
