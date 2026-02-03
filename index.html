@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=3">
+    <link rel="manifest" href="manifest.json?v=4">
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; }
         iframe { width: 100%; height: 100vh; border: none; display: block; }
@@ -13,35 +13,29 @@
             padding: 12px 20px; background: #28a745; color: white;
             border: none; border-radius: 8px; z-index: 10000; 
             display: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <button id="installBtn">📲 App Install Karein</button>
-
     <iframe src="https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec"></iframe>
 
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=3');
+            navigator.serviceWorker.register('sw.js?v=4');
         }
-
         let deferredPrompt;
-        const installBtn = document.getElementById('installBtn');
-
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installBtn.style.display = 'block';
+            document.getElementById('installBtn').style.display = 'block';
         });
-
-        installBtn.addEventListener('click', () => {
+        document.getElementById('installBtn').addEventListener('click', () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        installBtn.style.display = 'none';
+                        document.getElementById('installBtn').style.display = 'none';
                     }
                     deferredPrompt = null;
                 });
