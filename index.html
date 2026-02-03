@@ -4,80 +4,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=7">
+    <link rel="manifest" href="manifest.json?v=9">
     <style>
-        body, html { 
-            margin: 0; 
-            padding: 0; 
-            height: 100%; 
-            width: 100%; 
-            overflow: hidden; 
-            background-color: #f4f7f9; 
-        }
-        /* Iframe jo Google Script ko dikhayega */
-        iframe { 
-            width: 100%; 
-            height: 100vh; 
-            border: none; 
-            display: block; 
-        }
-        /* Install Button Styling */
+        /* Overflow ko auto kiya hai taki refresh kaam kare */
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: auto; background-color: #f4f7f9; }
+        
+        /* Iframe ki height thodi kam ki hai taki refresh trigger ho sake */
+        iframe { width: 100%; height: 100vh; border: none; display: block; }
+        
         #installBtn {
-            position: fixed; 
-            top: 15px; 
-            right: 15px;
-            padding: 12px 20px; 
-            background: #28a745; 
-            color: white;
-            border: none; 
-            border-radius: 8px; 
-            z-index: 10000; 
-            display: none; 
-            font-weight: bold; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            cursor: pointer;
+            position: fixed; top: 15px; right: 15px;
+            padding: 12px 20px; background: #28a745; color: white;
+            border: none; border-radius: 8px; z-index: 10000; 
+            display: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
     </style>
 </head>
 <body>
-
     <button id="installBtn">📲 App Install Karein</button>
 
-    <iframe src="https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec"></iframe>
+    <iframe id="myIframe" src="https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec"></iframe>
 
     <script>
-        // Service Worker register karna (Install option ke liye zaroori hai)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=7').catch(err => console.log("SW Error:", err));
+            navigator.serviceWorker.register('sw.js?v=9');
         }
 
-        let deferredPrompt;
-        const installBtn = document.getElementById('installBtn');
+        // Refresh logic: Screen ke top par niche khinchne par reload hoga
+        let touchStart = 0;
+        window.addEventListener('touchstart', (e) => { touchStart = e.touches[0].pageY; });
+        window.addEventListener('touchend', (e) => {
+            let touchEnd = e.changedTouches[0].pageY;
+            // Agar 150px se zyada niche khincha jaye toh reload karein
+            if (touchStart < touchEnd - 150 && window.scrollY <= 0) {
+                location.reload();
+            }
+        });
 
-        // Jab browser detect karega ki app install ho sakti hai
+        let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installBtn.style.display = 'block'; // Button dikhayein
+            document.getElementById('installBtn').style.display = 'block';
         });
 
-        // Button par click karne par install prompt dikhana
-        installBtn.addEventListener('click', () => {
+        document.getElementById('installBtn').addEventListener('click', () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        installBtn.style.display = 'none';
+                        document.getElementById('installBtn').style.display = 'none';
                     }
                     deferredPrompt = null;
                 });
             }
-        });
-
-        // App install hone ke baad button chhupana
-        window.addEventListener('appinstalled', () => {
-            installBtn.style.display = 'none';
-            console.log('App successfully installed');
         });
     </script>
 </body>
