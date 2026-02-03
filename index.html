@@ -1,39 +1,27 @@
-<!DOCTYPE html>
-<html lang="hi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json">
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        iframe { width: 100%; height: 100vh; border: none; }
-        #installBtn { 
-            position: fixed; top: 10px; right: 10px; 
-            padding: 12px; background: #28a745; color: white; 
-            border: none; border-radius: 8px; z-index: 999; 
-            display: none; font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <button id="installBtn">Install Mirzapur Mandal App</button>
-    <iframe src="https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec"></iframe>
-    
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
-        }
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            document.getElementById('installBtn').style.display = 'block';
-        });
-        document.getElementById('installBtn').addEventListener('click', () => {
+<script>
+    if ('serviceWorker' in navigator) {
+        // Naya version force karne ke liye '?v=2' lagaya hai
+        navigator.serviceWorker.register('sw.js?v=2');
+    }
+
+    let deferredPrompt;
+    const installBtn = document.getElementById('installBtn');
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        installBtn.style.display = 'block';
+    });
+
+    installBtn.addEventListener('click', () => {
+        if (deferredPrompt) {
             deferredPrompt.prompt();
-            document.getElementById('installBtn').style.display = 'none';
-        });
-    </script>
-</body>
-</html>
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            });
+        }
+    });
+</script>
