@@ -8,7 +8,7 @@
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
         
-        /* 1. Loader Style */
+        /* Loader Style */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
@@ -23,16 +23,6 @@
         #loading-text { color: #004d99; font-weight: bold; font-size: 16px; }
 
         iframe { width: 100%; height: 100vh; border: none; display: block; }
-        
-        /* 2. Install Button Style */
-        #installBtn {
-            position: fixed; top: 15px; right: 15px;
-            padding: 12px 20px; background: #28a745; color: white;
-            border: none; border-radius: 8px; z-index: 10000; 
-            display: none; /* Default hidden, JS will show if needed */
-            font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            cursor: pointer;
-        }
     </style>
 </head>
 <body>
@@ -42,13 +32,12 @@
         <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
     </div>
 
-    <button id="installBtn">📲 App Install Karein</button>
-
     <iframe id="appFrame" 
             src="https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec"
             onload="hideLoader()"></iframe>
 
     <script>
+        // Service Worker registration (offline support ke liye zaroori hai)
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js?v=35');
         }
@@ -57,111 +46,12 @@
             document.getElementById('loading-overlay').style.display = 'none';
         }
 
-        let deferredPrompt;
-        const installBtn = document.getElementById('installBtn');
-
-        // SIGNAL RECEIVER: Google Script se dashboard signal aate hi button hide karega
+        // Dashboard/Logout par page refresh handling
         window.addEventListener("message", (event) => {
-            // Check karein ki message login_success hai
-            if (event.data === "login_success") {
-                console.log("Login signal received: Hiding button");
-                installBtn.style.display = 'none';
-                sessionStorage.setItem('isLoggedIn', 'true');
-            }
-            // Check karein ki message logged_out hai
             if (event.data === "logged_out") {
-                console.log("Logout signal received: Resetting");
-                sessionStorage.removeItem('isLoggedIn');
-                location.reload(); // Page refresh taaki login page dikhe
-            }
-        }, false);
-
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            // Button tabhi dikhao jab user logged in NA ho (session check)
-            if (sessionStorage.getItem('isLoggedIn') !== 'true') {
-                installBtn.style.display = 'block';
-            }
-        });
-
-        installBtn.addEventListener('click', () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        installBtn.style.display = 'none';
-                    }
-                    deferredPrompt = null;
-                });
-            } else {
-                alert("App Install karne ke liye Chrome menu (3-dots) mein jaakar 'Install App' par click karein.");
-            }
-        });
-
-        window.addEventListener('appinstalled', () => {
-            installBtn.style.display = 'none';
-        });
-    </script>
-</body>
-</html>
-        });
-
-        // Pull to refresh
-        let startY = 0;
-        const indicator = document.getElementById('refresh-indicator');
-        window.addEventListener('touchstart', (e) => { startY = e.touches[0].pageY; }, {passive: true});
-        window.addEventListener('touchmove', (e) => {
-            const moveY = e.touches[0].pageY;
-            if (moveY - startY > 50 && window.scrollY === 0) { indicator.style.top = '20px'; }
-        }, {passive: true});
-        window.addEventListener('touchend', (e) => {
-            if (e.changedTouches[0].pageY - startY > 150) { location.reload(); }
-            else { indicator.style.top = '-50px'; }
-        });
-    </script>
-</body>
-</html>
-
-        // Pull to refresh logic
-        let startY = 0;
-        const indicator = document.getElementById('refresh-indicator');
-        window.addEventListener('touchstart', (e) => { startY = e.touches[0].pageY; }, {passive: true});
-        window.addEventListener('touchmove', (e) => {
-            const moveY = e.touches[0].pageY;
-            if (moveY - startY > 50 && window.scrollY === 0) { indicator.style.top = '20px'; }
-        }, {passive: true});
-        window.addEventListener('touchend', (e) => {
-            if (e.changedTouches[0].pageY - startY > 150) { location.reload(); }
-            else { indicator.style.top = '-50px'; }
-        });
-    </script>
-</body>
-</html>
-            }
-        });
-
-        window.addEventListener('appinstalled', () => {
-            console.log('App successfully installed');
-            installBtn.style.display = 'none';
-        });
-
-        // Pull to refresh logic
-        let startY = 0;
-        const indicator = document.getElementById('refresh-indicator');
-        window.addEventListener('touchstart', (e) => { startY = e.touches[0].pageY; }, {passive: true});
-        window.addEventListener('touchmove', (e) => {
-            const moveY = e.touches[0].pageY;
-            if (moveY - startY > 50 && window.scrollY === 0) { indicator.style.top = '20px'; }
-        }, {passive: true});
-        window.addEventListener('touchend', (e) => {
-            if (e.changedTouches[0].pageY - startY > 150) { 
-                indicator.innerHTML = "Refeshing...";
                 location.reload(); 
             }
-            else { indicator.style.top = '-50px'; }
-        });
+        }, false);
     </script>
 </body>
 </html>
