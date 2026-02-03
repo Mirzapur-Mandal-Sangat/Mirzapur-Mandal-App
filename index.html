@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=21">
+    <link rel="manifest" href="manifest.json?v=25">
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
         
-        /* Purana Loader Style */
+        /* 1. Aapka Purana Loader Style */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
@@ -24,12 +24,12 @@
 
         iframe { width: 100%; height: 100vh; border: none; display: block; }
         
-        /* Purana Button Style aur Name */
+        /* 2. Aapka Purana Green Button Style */
         #installBtn {
             position: fixed; top: 15px; right: 15px;
             padding: 12px 20px; background: #28a745; color: white;
             border: none; border-radius: 8px; z-index: 10000; 
-            display: block; /* Forced show on login page */
+            display: block; /* forced show for login page */
             font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             cursor: pointer;
         }
@@ -46,10 +46,11 @@
 
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <p id="loaderText">लोड हो रहा है...</p>
+        <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
     </div>
 
     <div id="refresh-indicator">🔄 Refreshing...</div>
+    
     <button id="installBtn">📲 App Install Karein</button>
 
     <iframe id="appFrame" 
@@ -58,7 +59,7 @@
 
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=21');
+            navigator.serviceWorker.register('sw.js?v=25');
         }
 
         function hideLoader() {
@@ -69,7 +70,7 @@
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
 
-        // Message Listener from Google Script
+        // SIGNAL LOGIC: Login page par button dikhana aur dashboard par chhupana
         window.addEventListener("message", (event) => {
             if (event.data === "login_success") {
                 installBtn.style.display = 'none';
@@ -103,6 +104,22 @@
         window.addEventListener('appinstalled', () => {
             installBtn.style.display = 'none';
         });
+
+        // Pull to refresh
+        let startY = 0;
+        const indicator = document.getElementById('refresh-indicator');
+        window.addEventListener('touchstart', (e) => { startY = e.touches[0].pageY; }, {passive: true});
+        window.addEventListener('touchmove', (e) => {
+            const moveY = e.touches[0].pageY;
+            if (moveY - startY > 50 && window.scrollY === 0) { indicator.style.top = '20px'; }
+        }, {passive: true});
+        window.addEventListener('touchend', (e) => {
+            if (e.changedTouches[0].pageY - startY > 150) { location.reload(); }
+            else { indicator.style.top = '-50px'; }
+        });
+    </script>
+</body>
+</html>
 
         // Pull to refresh logic
         let startY = 0;
