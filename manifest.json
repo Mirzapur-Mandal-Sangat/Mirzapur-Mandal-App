@@ -2,15 +2,15 @@
   "name": "Mirzapur Mandal App",
   "short_name": "MM App",
   "description": "District Management System",
-  "start_url": "index.html?v=2",
+  "start_url": "index.html?v=3",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0088cc",
   "icons": [
     {
-      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzAwODhDQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIyMCIgZm9udC1mYW1pbHk9IkFyaWFsIiB0ZXh0LWFuY2hvcl0ibWlkZGxlIiBkeT0iLjNlbSI+TU08L3RleHQ+PC9zdmc+",
+      "src": "https://i.ibb.co/v6mXmP0/1000308781.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
