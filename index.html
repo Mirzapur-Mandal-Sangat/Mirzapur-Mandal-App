@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=11">
+    <link rel="manifest" href="manifest.json?v=12">
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
         
-        /* Loading Overlay Styling */
+        /* Loading Overlay */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
@@ -24,11 +24,21 @@
 
         iframe { width: 100%; height: 100vh; border: none; display: block; }
         
+        /* Install Button - Dashboard par hide karne ke liye iska logic niche hai */
         #installBtn {
             position: fixed; top: 15px; right: 15px;
             padding: 12px 20px; background: #28a745; color: white;
             border: none; border-radius: 8px; z-index: 10000; 
             display: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+
+        /* Pull-to-refresh indicator */
+        #refresh-indicator {
+            position: fixed; top: -50px; left: 50%; transform: translateX(-50%);
+            background: #0088cc; color: white; padding: 8px 15px;
+            border-radius: 20px; font-size: 12px; font-weight: bold;
+            transition: top 0.3s; z-index: 99999;
         }
     </style>
 </head>
@@ -39,6 +49,7 @@
         <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
     </div>
 
+    <div id="refresh-indicator">🔄 Refreshing...</div>
     <button id="installBtn">📲 App Install Karein</button>
 
     <iframe id="appFrame" 
@@ -46,29 +57,70 @@
             onload="hideLoader()"></iframe>
 
     <script>
-        // Loading hatane ka function
+        // Service Worker register karna
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js?v=12');
+        }
+
         function hideLoader() {
             const loader = document.getElementById('loading-overlay');
             loader.style.opacity = '0';
             setTimeout(() => { loader.style.display = 'none'; }, 500);
         }
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=11');
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        // Naya logic: Check karega ki user dashboard par hai ya nahi
+        function checkButtonVisibility() {
+            // Check login status (LocalStorage se mobile number check karke)
+            const isUserLoggedIn = localStorage.getItem('uM'); 
+            
+            // Agar user login hai ya app pehle se install hai, toh button mat dikhao
+            if (isUserLoggedIn || !deferredPrompt) {
+                installBtn.style.display = 'none';
+            } else {
+                installBtn.style.display = 'block';
+            }
         }
 
-        let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            document.getElementById('installBtn').style.display = 'block';
+            checkButtonVisibility();
         });
 
-        document.getElementById('installBtn').addEventListener('click', () => {
+        installBtn.addEventListener('click', () => {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                document.getElementById('installBtn').style.display = 'none';
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        installBtn.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
             }
+        });
+
+        // Dashboard check karne ke liye har 2 second par check karein
+        setInterval(checkButtonVisibility, 2000);
+
+        window.addEventListener('appinstalled', () => {
+            installBtn.style.display = 'none';
+        });
+
+        // Pull to refresh logic
+        let startY = 0;
+        const indicator = document.getElementById('refresh-indicator');
+
+        window.addEventListener('touchstart', (e) => { startY = e.touches[0].pageY; }, {passive: true});
+        window.addEventListener('touchmove', (e) => {
+            const moveY = e.touches[0].pageY;
+            if (moveY - startY > 50 && window.scrollY === 0) { indicator.style.top = '20px'; }
+        }, {passive: true});
+        window.addEventListener('touchend', (e) => {
+            if (e.changedTouches[0].pageY - startY > 150) { location.reload(); }
+            else { indicator.style.top = '-50px'; }
         });
     </script>
 </body>
