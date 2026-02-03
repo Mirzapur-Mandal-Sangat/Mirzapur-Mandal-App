@@ -4,19 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=25">
+    <link rel="manifest" href="manifest.json?v=35">
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
         
-        /* 1. Aapka Purana Loader Style */
+        /* 1. Purana Loader Style Restore Kiya */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 99999;
         }
         .spinner {
-            border: 5px solid #f3f3f3; border-top: 5px solid #0088cc;
-            border-radius: 50%; width: 50px; height: 50px;
+            border: 4px solid #f3f3f3; border-top: 4px solid #0088cc;
+            border-radius: 50%; width: 40px; height: 40px;
             animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -24,21 +24,14 @@
 
         iframe { width: 100%; height: 100vh; border: none; display: block; }
         
-        /* 2. Aapka Purana Green Button Style */
+        /* 2. Purana Button Style Restore Kiya */
         #installBtn {
             position: fixed; top: 15px; right: 15px;
             padding: 12px 20px; background: #28a745; color: white;
             border: none; border-radius: 8px; z-index: 10000; 
-            display: block; /* forced show for login page */
+            display: none; /* Login page par iska logic niche script me hai */
             font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             cursor: pointer;
-        }
-
-        #refresh-indicator {
-            position: fixed; top: -50px; left: 50%; transform: translateX(-50%);
-            background: #0088cc; color: white; padding: 8px 15px;
-            border-radius: 20px; font-size: 12px; font-weight: bold;
-            transition: top 0.3s; z-index: 99999;
         }
     </style>
 </head>
@@ -49,8 +42,6 @@
         <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
     </div>
 
-    <div id="refresh-indicator">🔄 Refreshing...</div>
-    
     <button id="installBtn">📲 App Install Karein</button>
 
     <iframe id="appFrame" 
@@ -59,32 +50,37 @@
 
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=25');
+            navigator.serviceWorker.register('sw.js?v=35');
         }
 
         function hideLoader() {
-            const loader = document.getElementById('loading-overlay');
-            loader.style.display = 'none';
+            document.getElementById('loading-overlay').style.display = 'none';
         }
 
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
 
-        // SIGNAL LOGIC: Login page par button dikhana aur dashboard par chhupana
+        // SIGNAL RECEIVER: Google Script se dashboard signal aate hi button lock karega
         window.addEventListener("message", (event) => {
             if (event.data === "login_success") {
+                console.log("Login signal received: Strictly hiding button");
                 installBtn.style.display = 'none';
+                installBtn.setAttribute('data-logged-in', 'true');
             }
             if (event.data === "logged_out") {
-                installBtn.style.display = 'block';
-                location.reload(); 
+                console.log("Logout signal received: Resetting visibility");
+                installBtn.removeAttribute('data-logged-in');
+                location.reload(); // Force refresh to re-evaluate install state
             }
         }, false);
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            installBtn.style.display = 'block';
+            // Agar dashboard pehle se open nahi hai, tabhi button dikhao
+            if (!installBtn.getAttribute('data-logged-in')) {
+                installBtn.style.display = 'block';
+            }
         });
 
         installBtn.addEventListener('click', () => {
@@ -103,6 +99,10 @@
 
         window.addEventListener('appinstalled', () => {
             installBtn.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
         });
 
         // Pull to refresh
