@@ -4,25 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=35">
+    
+    <link rel="preconnect" href="https://script.google.com">
+    <link rel="dns-prefetch" href="https://script.google.com">
+    
+    <link rel="manifest" href="manifest.json?v=36">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #ffffff; font-family: sans-serif; }
         
-        /* Loader Style */
+        /* लोडर स्टाइल */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 99999;
+            transition: opacity 0.5s ease;
         }
         .spinner {
             border: 4px solid #f3f3f3; border-top: 4px solid #0088cc;
-            border-radius: 50%; width: 40px; height: 40px;
+            border-radius: 50%; width: 45px; height: 45px;
             animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #loading-text { color: #004d99; font-weight: bold; font-size: 16px; }
+        #loading-text { color: #004d99; font-weight: bold; font-size: 16px; letter-spacing: 0.5px; }
 
-        iframe { width: 100%; height: 100vh; border: none; display: block; }
+        iframe { width: 100%; height: 100vh; border: none; display: block; opacity: 0; transition: opacity 0.5s ease; }
+        iframe.loaded { opacity: 1; }
     </style>
 </head>
 <body>
@@ -33,20 +39,36 @@
     </div>
 
     <iframe id="appFrame" 
-            src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
+            src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec?v=refresh"
+            allow="geolocation; microphone; camera"
             onload="hideLoader()"></iframe>
 
     <script>
-        // Service Worker registration (offline support ke liye zaroori hai)
+        // सर्विस वर्कर रजिस्ट्रेशन
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=35');
+            navigator.serviceWorker.register('sw.js?v=36');
         }
 
         function hideLoader() {
-            document.getElementById('loading-overlay').style.display = 'none';
+            const loader = document.getElementById('loading-overlay');
+            const frame = document.getElementById('appFrame');
+            
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+                frame.classList.add('loaded'); // आईफ्रेम को धीरे से दिखाएगा
+            }, 500);
         }
 
-        // Dashboard/Logout par page refresh handling
+        // टेलीग्राम या धीमे नेटवर्क के लिए बैकअप: 10 सेकंड बाद लोडर हटा दें
+        setTimeout(() => {
+            const loader = document.getElementById('loading-overlay');
+            if (loader.style.display !== 'none') {
+                console.log("Loading taking too long, forcing display...");
+                hideLoader();
+            }
+        }, 10000); 
+
         window.addEventListener("message", (event) => {
             if (event.data === "logged_out") {
                 location.reload(); 
