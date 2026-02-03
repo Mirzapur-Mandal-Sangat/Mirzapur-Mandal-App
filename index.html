@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Webbook App</title>
+    <title>Mirzapur Mandal App</title>
     <link rel="manifest" href="manifest.json">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #f4f7f9; }
         /* Iframe pure screen par dikhega */
         iframe {
             width: 100%;
@@ -14,35 +14,46 @@
             border: none;
         }
         #installBtn {
-            position: fixed; top: 10px; right: 10px;
-            padding: 10px; background: #28a745; color: white;
-            border: none; border-radius: 5px; z-index: 100; display: none;
+            position: fixed; top: 15px; right: 15px;
+            padding: 12px 20px; background: #28a745; color: white;
+            border: none; border-radius: 8px; z-index: 10000; 
+            display: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <button id="installBtn">Install App</button>
+    <button id="installBtn">📲 App Install Karein</button>
 
-    <iframe src="YOUR_GOOGLE_APPS_SCRIPT_URL_HERE"></iframe>
+    <iframe src="https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec"></iframe>
 
     <script>
+        // Service Worker Register karna (Install ke liye zaroori hai)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js').catch(err => console.log("SW Error:", err));
         }
 
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
 
         window.addEventListener('beforeinstallprompt', (e) => {
+            // Browser ka default prompt rokein
             e.preventDefault();
             deferredPrompt = e;
+            // Hamara custom button dikhayein
             installBtn.style.display = 'block';
         });
 
         installBtn.addEventListener('click', () => {
-            deferredPrompt.prompt();
             installBtn.style.display = 'none';
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User ne app install kar li');
+                }
+                deferredPrompt = null;
+            });
         });
     </script>
 </body>
