@@ -1,16 +1,16 @@
 {
   "name": "Mirzapur Mandal App",
   "short_name": "MM App",
-  "description": "District Management System for Mirzapur Mandal",
-  "start_url": "index.html",
+  "description": "District Management System",
+  "start_url": "index.html?v=2",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#0088cc",
   "icons": [
     {
-      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAB3RJTUUH6AIDEhUKYlY9VAAAAAd0RVh0QXV0aG9yAKjnWf0AAAAIdEVh0RGVzY3JpcHRpb24Ad2lkdGg9IjEyOCIgaGVpZ2h0PSIxMjgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgo8ZyBmaWxsPSIjMDA4OENDIj4KPGNpcmNsZSBjeD0iNjQiIGN5PSI2NCIgcj0iNjAiLz4KPC9nPgo8L3N2Zz4...",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI0NSIgZmlsbD0iIzAwODhDQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIyMCIgZm9udC1mYW1pbHk9IkFyaWFsIiB0ZXh0LWFuY2hvcl0ibWlkZGxlIiBkeT0iLjNlbSI+TU08L3RleHQ+PC9zdmc+",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]
