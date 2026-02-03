@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=16">
+    <link rel="manifest" href="manifest.json?v=18">
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
         
-        /* Loading Overlay */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
@@ -20,24 +19,21 @@
             animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #loading-text { color: #0088cc; font-weight: bold; font-size: 16px; }
 
         iframe { width: 100%; height: 100vh; border: none; display: block; }
         
-        /* Install Button styling */
+        /* Install Button - Star Icon Style */
         #installBtn {
             position: fixed; top: 15px; right: 15px;
-            padding: 12px 20px; background: #28a745; color: white;
-            border: none; border-radius: 8px; z-index: 10000; 
-            display: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            cursor: pointer;
+            padding: 10px 15px; background: #28a745; color: white;
+            border: none; border-radius: 50px; z-index: 10000; 
+            display: none; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            cursor: pointer; animation: pulse 2s infinite;
         }
-
-        #refresh-indicator {
-            position: fixed; top: -50px; left: 50%; transform: translateX(-50%);
-            background: #0088cc; color: white; padding: 8px 15px;
-            border-radius: 20px; font-size: 12px; font-weight: bold;
-            transition: top 0.3s; z-index: 99999;
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -45,53 +41,43 @@
 
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
+        <div style="color: #0088cc;">लोड हो रहा है...</div>
     </div>
 
-    <div id="refresh-indicator">🔄 Refreshing...</div>
-    <button id="installBtn">📲 App Install Karein</button>
+    <button id="installBtn">🌟 App Install</button>
 
     <iframe id="appFrame" 
             src="https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec"
             onload="hideLoader()"></iframe>
 
     <script>
-        // Service Worker with version update
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=16');
+            navigator.serviceWorker.register('sw.js?v=18');
         }
 
         function hideLoader() {
-            const loader = document.getElementById('loading-overlay');
-            loader.style.opacity = '0';
-            setTimeout(() => { loader.style.display = 'none'; }, 500);
+            document.getElementById('loading-overlay').style.display = 'none';
         }
 
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
 
-        // --- GOOGLE SCRIPT SIGNALS (PostMessage Listener) ---
+        // Signal from Google Script
         window.addEventListener("message", (event) => {
             if (event.data === "login_success") {
-                console.log("User Logged In: Hiding Install UI");
                 installBtn.style.display = 'none';
             }
             if (event.data === "logged_out") {
-                console.log("User Logged Out: Forcing Refresh to Show Install UI");
-                // Logout hote hi page refresh karein taaki browser check kare app status
-                location.reload();
+                location.reload(); 
             }
         }, false);
 
-        // Before Install Prompt logic
+        // Ye event tabhi chalta hai jab browser app ko installable pata hai
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log("Install Prompt Ready");
+            console.log("Install prompt detected!");
             e.preventDefault();
             deferredPrompt = e;
-            
-            // Agar user login nahi hai (localStorage me mobile nahi hai), tabhi button dikhao
-            // Note: Iframe ke andar ka localStorage parent ko nahi dikhta, 
-            // isliye hum postMessage par bharosa karenge ya page load par check karenge.
+            // Forcefully showing the button on login page
             installBtn.style.display = 'block';
         });
 
@@ -100,9 +86,21 @@
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
-                        console.log('User accepted install');
                         installBtn.style.display = 'none';
                     }
+                    deferredPrompt = null;
+                });
+            } else {
+                alert("Browser ne abhi tak Install option nahi diya hai. Kripya 2-3 second rukiye ya page refresh karein.");
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installBtn.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
                     deferredPrompt = null;
                 });
             }
