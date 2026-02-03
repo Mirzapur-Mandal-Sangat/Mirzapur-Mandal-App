@@ -8,7 +8,7 @@
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
         
-        /* 1. Purana Loader Style Restore Kiya */
+        /* 1. Loader Style */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
@@ -24,12 +24,12 @@
 
         iframe { width: 100%; height: 100vh; border: none; display: block; }
         
-        /* 2. Purana Button Style Restore Kiya */
+        /* 2. Install Button Style */
         #installBtn {
             position: fixed; top: 15px; right: 15px;
             padding: 12px 20px; background: #28a745; color: white;
             border: none; border-radius: 8px; z-index: 10000; 
-            display: none; /* Login page par iska logic niche script me hai */
+            display: none; /* Default hidden, JS will show if needed */
             font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             cursor: pointer;
         }
@@ -60,25 +60,28 @@
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
 
-        // SIGNAL RECEIVER: Google Script se dashboard signal aate hi button lock karega
+        // SIGNAL RECEIVER: Google Script se dashboard signal aate hi button hide karega
         window.addEventListener("message", (event) => {
+            // Check karein ki message login_success hai
             if (event.data === "login_success") {
-                console.log("Login signal received: Strictly hiding button");
+                console.log("Login signal received: Hiding button");
                 installBtn.style.display = 'none';
-                installBtn.setAttribute('data-logged-in', 'true');
+                sessionStorage.setItem('isLoggedIn', 'true');
             }
+            // Check karein ki message logged_out hai
             if (event.data === "logged_out") {
-                console.log("Logout signal received: Resetting visibility");
-                installBtn.removeAttribute('data-logged-in');
-                location.reload(); // Force refresh to re-evaluate install state
+                console.log("Logout signal received: Resetting");
+                sessionStorage.removeItem('isLoggedIn');
+                location.reload(); // Page refresh taaki login page dikhe
             }
         }, false);
 
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            // Agar dashboard pehle se open nahi hai, tabhi button dikhao
-            if (!installBtn.getAttribute('data-logged-in')) {
+            
+            // Button tabhi dikhao jab user logged in NA ho (session check)
+            if (sessionStorage.getItem('isLoggedIn') !== 'true') {
                 installBtn.style.display = 'block';
             }
         });
