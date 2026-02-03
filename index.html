@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=15">
+    <link rel="manifest" href="manifest.json?v=16">
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
         
@@ -33,7 +33,6 @@
             cursor: pointer;
         }
 
-        /* Refresh Indicator */
         #refresh-indicator {
             position: fixed; top: -50px; left: 50%; transform: translateX(-50%);
             background: #0088cc; color: white; padding: 8px 15px;
@@ -57,8 +56,9 @@
             onload="hideLoader()"></iframe>
 
     <script>
+        // Service Worker with version update
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=15');
+            navigator.serviceWorker.register('sw.js?v=16');
         }
 
         function hideLoader() {
@@ -70,25 +70,29 @@
         let deferredPrompt;
         const installBtn = document.getElementById('installBtn');
 
-        // --- MESSAGE LISTENER: Google Script se signal pakadne ke liye ---
+        // --- GOOGLE SCRIPT SIGNALS (PostMessage Listener) ---
         window.addEventListener("message", (event) => {
             if (event.data === "login_success") {
-                console.log("Dashboard Loaded: Hiding Install Button");
+                console.log("User Logged In: Hiding Install UI");
                 installBtn.style.display = 'none';
             }
             if (event.data === "logged_out") {
-                console.log("Logged Out: Checking for Install Button");
-                if (deferredPrompt) { installBtn.style.display = 'block'; }
+                console.log("User Logged Out: Forcing Refresh to Show Install UI");
+                // Logout hote hi page refresh karein taaki browser check kare app status
+                location.reload();
             }
         }, false);
 
+        // Before Install Prompt logic
         window.addEventListener('beforeinstallprompt', (e) => {
+            console.log("Install Prompt Ready");
             e.preventDefault();
             deferredPrompt = e;
-            // Shuruat mein dikhao agar user login nahi hai
-            if (!localStorage.getItem('uM')) {
-                installBtn.style.display = 'block';
-            }
+            
+            // Agar user login nahi hai (localStorage me mobile nahi hai), tabhi button dikhao
+            // Note: Iframe ke andar ka localStorage parent ko nahi dikhta, 
+            // isliye hum postMessage par bharosa karenge ya page load par check karenge.
+            installBtn.style.display = 'block';
         });
 
         installBtn.addEventListener('click', () => {
@@ -96,6 +100,7 @@
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => {
                     if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted install');
                         installBtn.style.display = 'none';
                     }
                     deferredPrompt = null;
@@ -104,6 +109,7 @@
         });
 
         window.addEventListener('appinstalled', () => {
+            console.log('App successfully installed');
             installBtn.style.display = 'none';
         });
 
@@ -116,29 +122,10 @@
             if (moveY - startY > 50 && window.scrollY === 0) { indicator.style.top = '20px'; }
         }, {passive: true});
         window.addEventListener('touchend', (e) => {
-            if (e.changedTouches[0].pageY - startY > 150) { location.reload(); }
-            else { indicator.style.top = '-50px'; }
-        });
-    </script>
-</body>
-</html>
-        setInterval(checkButtonVisibility, 2000);
-
-        window.addEventListener('appinstalled', () => {
-            installBtn.style.display = 'none';
-        });
-
-        // Pull to refresh logic
-        let startY = 0;
-        const indicator = document.getElementById('refresh-indicator');
-
-        window.addEventListener('touchstart', (e) => { startY = e.touches[0].pageY; }, {passive: true});
-        window.addEventListener('touchmove', (e) => {
-            const moveY = e.touches[0].pageY;
-            if (moveY - startY > 50 && window.scrollY === 0) { indicator.style.top = '20px'; }
-        }, {passive: true});
-        window.addEventListener('touchend', (e) => {
-            if (e.changedTouches[0].pageY - startY > 150) { location.reload(); }
+            if (e.changedTouches[0].pageY - startY > 150) { 
+                indicator.innerHTML = "Refeshing...";
+                location.reload(); 
+            }
             else { indicator.style.top = '-50px'; }
         });
     </script>
