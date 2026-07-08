@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
-    <!-- PWA aur OS level lag hatane ke liye zaroori Tags -->
     <meta name="theme-color" content="#ffffff">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -17,7 +16,9 @@
     <link rel="dns-prefetch" href="https://script.google.com">
     <link rel="dns-prefetch" href="https://script.googleusercontent.com">
     
-    <link rel="manifest" href="manifest.json?v=36">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
+    
     <style>
         /* touch-action: manipulation jodne se tap/click turant register hota hai */
         body, html { 
@@ -52,7 +53,7 @@
     </div>
 
     <iframe id="appFrame" 
-            src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec?v=refresh"
+            src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
             allow="geolocation; microphone; camera"
             loading="eager"
             onload="hideLoader()"></iframe>
@@ -61,7 +62,7 @@
         // Service worker ko UI load hone ke baad register karein taaki App khulte hi hang na ho
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js?v=36').catch(err => console.log('SW setup failed:', err));
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW setup failed:', err));
             });
         }
 
