@@ -3,6 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <!-- PWA aur OS level lag hatane ke liye zaroori Tags -->
+    <meta name="theme-color" content="#ffffff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    
     <title>Mirzapur Mandal App</title>
     
     <link rel="preconnect" href="https://script.google.com">
@@ -12,13 +19,18 @@
     
     <link rel="manifest" href="manifest.json?v=36">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #ffffff; font-family: sans-serif; }
+        /* touch-action: manipulation jodne se tap/click turant register hota hai */
+        body, html { 
+            margin: 0; padding: 0; height: 100%; width: 100%; 
+            overflow: hidden; background-color: #ffffff; 
+            font-family: sans-serif; touch-action: manipulation; 
+        }
         
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 99999;
-            transition: opacity 0.3s ease; /* Thoda fast transition */
+            transition: opacity 0.3s ease;
         }
         .spinner {
             border: 4px solid #f3f3f3; border-top: 4px solid #0088cc;
@@ -46,8 +58,11 @@
             onload="hideLoader()"></iframe>
 
     <script>
+        // Service worker ko UI load hone ke baad register karein taaki App khulte hi hang na ho
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=36').catch(err => console.log('SW setup failed:', err));
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js?v=36').catch(err => console.log('SW setup failed:', err));
+            });
         }
 
         function hideLoader() {
@@ -66,7 +81,7 @@
             if (loader.style.display !== 'none') {
                 hideLoader();
             }
-        }, 8000); // Time ko 10 se 8 seconds kar diya hai
+        }, 8000); 
 
         window.addEventListener("message", (event) => {
             if (event.data === "logged_out") {
