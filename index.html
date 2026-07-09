@@ -3,46 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <meta name="theme-color" content="#ffffff">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    
     <title>Mirzapur Mandal App</title>
-    
-    <link rel="preconnect" href="https://script.google.com">
-    <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-    <link rel="dns-prefetch" href="https://script.google.com">
-    <link rel="dns-prefetch" href="https://script.googleusercontent.com">
-    
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="icon.png">
-    
+    <link rel="manifest" href="manifest.json?v=35">
     <style>
-        /* touch-action: manipulation jodne se tap/click turant register hota hai */
-        body, html { 
-            margin: 0; padding: 0; height: 100%; width: 100%; 
-            overflow: hidden; background-color: #ffffff; 
-            font-family: sans-serif; touch-action: manipulation; 
-        }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: sans-serif; }
         
+        /* 1. Purana Loader Style Restore Kiya */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 99999;
-            transition: opacity 0.3s ease;
         }
         .spinner {
             border: 4px solid #f3f3f3; border-top: 4px solid #0088cc;
-            border-radius: 50%; width: 45px; height: 45px;
+            border-radius: 50%; width: 40px; height: 40px;
             animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #loading-text { color: #004d99; font-weight: bold; font-size: 16px; letter-spacing: 0.5px; }
+        #loading-text { color: #004d99; font-weight: bold; font-size: 16px; }
 
-        iframe { width: 100%; height: 100vh; border: none; display: block; opacity: 0; transition: opacity 0.3s ease; }
-        iframe.loaded { opacity: 1; }
+        iframe { width: 100%; height: 100vh; border: none; display: block; }
+        
+        /* 2. Purana Button Style Restore Kiya */
+        #installBtn {
+            position: fixed; top: 15px; right: 15px;
+            padding: 12px 20px; background: #28a745; color: white;
+            border: none; border-radius: 8px; z-index: 10000; 
+            display: none; /* Login page par iska logic niche script me hai */
+            font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -52,43 +42,64 @@
         <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
     </div>
 
+    <button id="installBtn">📲 App Install Karein</button>
+
     <iframe id="appFrame" 
-            src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
-            allow="geolocation; microphone; camera"
-            loading="eager"
+            src="https://script.google.com/macros/s/AKfycbypZFVG-ynAJXq64p2s2g8ANrOGEQ7SC5846XQxd6Ff9y45pRnxKidsMmgadIZk4w/exec"
             onload="hideLoader()"></iframe>
 
     <script>
-        // Service worker ko UI load hone ke baad register karein taaki App khulte hi hang na ho
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW setup failed:', err));
-            });
+            navigator.serviceWorker.register('sw.js?v=35');
         }
 
         function hideLoader() {
-            const loader = document.getElementById('loading-overlay');
-            const frame = document.getElementById('appFrame');
-            
-            loader.style.opacity = '0';
-            setTimeout(() => {
-                loader.style.display = 'none';
-                frame.classList.add('loaded');
-            }, 300);
+            document.getElementById('loading-overlay').style.display = 'none';
         }
 
-        setTimeout(() => {
-            const loader = document.getElementById('loading-overlay');
-            if (loader.style.display !== 'none') {
-                hideLoader();
-            }
-        }, 8000); 
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
 
+        // SIGNAL RECEIVER: Google Script se dashboard signal aate hi button lock karega
         window.addEventListener("message", (event) => {
+            if (event.data === "login_success") {
+                console.log("Login signal received: Strictly hiding button");
+                installBtn.style.display = 'none';
+                installBtn.setAttribute('data-logged-in', 'true');
+            }
             if (event.data === "logged_out") {
-                location.reload(); 
+                console.log("Logout signal received: Resetting visibility");
+                installBtn.removeAttribute('data-logged-in');
+                location.reload(); // Force refresh to re-evaluate install state
             }
         }, false);
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Agar dashboard pehle se open nahi hai, tabhi button dikhao
+            if (!installBtn.getAttribute('data-logged-in')) {
+                installBtn.style.display = 'block';
+            }
+        });
+
+        installBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        installBtn.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                alert("App Install karne ke liye Chrome menu (3-dots) mein jaakar 'Install App' par click karein.");
+            }
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installBtn.style.display = 'none';
+        });
     </script>
 </body>
 </html>
