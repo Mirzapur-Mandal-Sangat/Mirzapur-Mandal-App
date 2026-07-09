@@ -5,49 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #ffffff; }
-        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; }
-        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0088cc; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #ffffff; font-family: sans-serif; }
+        #loading-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #ffffff; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 99999;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid #0088cc;
+            border-radius: 50%; width: 45px; height: 45px;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        iframe { width: 100%; height: 100%; border: none; }
+        iframe { width: 100%; height: 100vh; border: none; display: block; }
     </style>
 </head>
 <body>
 
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <div style="color: #0088cc; font-weight: bold; margin-top:10px;">सिस्टम को रिफ्रेश कर रहे हैं...</div>
+        <div id="loading-text">Loading...</div>
     </div>
 
-    <iframe id="appFrame" allow="camera"></iframe>
+    <iframe id="appFrame" 
+            src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
+            allow="geolocation; microphone; camera"></iframe>
 
     <script>
-        const scriptUrl = "https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec";
-        const iframe = document.getElementById('appFrame');
+        const frame = document.getElementById('appFrame');
         let loadCheckTimer;
 
-        // 🛡️ "Watchdog" Logic
+        // 🛡️ ERR_BLOCKED_BY_RESPONSE ya loading fail hone par auto-refresh
         function startWatchdog() {
-            // अगर 5 सेकंड के अंदर iframe ने "loaded" का सिग्नल नहीं दिया, तो ये मान लेगा कि वो क्रैश/ब्लॉक हो गया है
             loadCheckTimer = setTimeout(() => {
-                console.log("Iframe stuck, forcing auto-refresh...");
-                window.location.reload(); 
-            }, 5000); 
+                console.log("Loading taking too long, refreshing...");
+                location.reload();
+            }, 7000); // 7 सेकंड में लोड न हुआ तो रिफ्रेश
         }
 
-        function initApp() {
-            // हर बार नया timestamp, ताकि Google कैशे से पुराना ब्लॉक पेज न उठाए
-            iframe.src = scriptUrl + "?v=" + Date.now();
-            startWatchdog();
-        }
-
-        // जैसे ही Iframe लोड हुआ, वॉचडॉग बंद कर दो
-        iframe.onload = function() {
+        // Iframe load hote hi timer band
+        frame.onload = () => {
             clearTimeout(loadCheckTimer);
             document.getElementById('loading-overlay').style.display = 'none';
         };
 
-        window.onload = initApp;
+        // Service Worker setup
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
+        }
+
+        // Start watch
+        startWatchdog();
     </script>
 </body>
 </html>
