@@ -5,23 +5,49 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #ffffff; display: flex; justify-content: center; align-items: center; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background: #ffffff; }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; }
         .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0088cc; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
-    <div class="spinner"></div>
+
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <div style="color: #0088cc; font-weight: bold; margin-top:10px;">सिस्टम को रिफ्रेश कर रहे हैं...</div>
+    </div>
+
+    <iframe id="appFrame" allow="camera"></iframe>
 
     <script>
-        // सीधे Google Script पर भेजें (यह Iframe एरर को पूरी तरह खत्म कर देगा)
-        // Telegram ब्राउज़र इसे आसानी से हैंडल कर लेगा
         const scriptUrl = "https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec";
-        
-        // एक छोटा सा डिले ताकि लोडर दिखे
-        setTimeout(() => {
-            window.location.replace(scriptUrl);
-        }, 500);
+        const iframe = document.getElementById('appFrame');
+        let loadCheckTimer;
+
+        // 🛡️ "Watchdog" Logic
+        function startWatchdog() {
+            // अगर 5 सेकंड के अंदर iframe ने "loaded" का सिग्नल नहीं दिया, तो ये मान लेगा कि वो क्रैश/ब्लॉक हो गया है
+            loadCheckTimer = setTimeout(() => {
+                console.log("Iframe stuck, forcing auto-refresh...");
+                window.location.reload(); 
+            }, 5000); 
+        }
+
+        function initApp() {
+            // हर बार नया timestamp, ताकि Google कैशे से पुराना ब्लॉक पेज न उठाए
+            iframe.src = scriptUrl + "?v=" + Date.now();
+            startWatchdog();
+        }
+
+        // जैसे ही Iframe लोड हुआ, वॉचडॉग बंद कर दो
+        iframe.onload = function() {
+            clearTimeout(loadCheckTimer);
+            document.getElementById('loading-overlay').style.display = 'none';
+        };
+
+        window.onload = initApp;
     </script>
 </body>
 </html>
