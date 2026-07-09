@@ -1,51 +1,21 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mirzapur Mandal App</title>
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #ffffff; }
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #ffffff; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 99999;
-        }
-        iframe { width: 100%; height: 100vh; border: none; display: block; background: #ffffff; }
-        #reloadBtn { display: none; margin-top: 20px; padding: 10px 20px; background: #0088cc; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    </style>
+    <title>My App</title>
+    <link rel="manifest" href="manifest.json">
 </head>
-<body>
+<body style="margin:0; padding:0; height:100vh; overflow:hidden;">
 
-    <div id="loading-overlay">
-        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #0088cc; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
-        <p>लोड हो रहा है...</p>
-        <button id="reloadBtn" onclick="location.reload()">Error? Click to Refresh</button>
-    </div>
-
-    <iframe id="appFrame" src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec" allow="geolocation; microphone; camera"></iframe>
+    <iframe src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec" 
+            style="width:100%; height:100vh; border:none;" 
+            title="My App">
+    </iframe>
 
     <script>
-        // 1. अगर sw.js से रिफ्रेश का मैसेज आए
-        navigator.serviceWorker.addEventListener('message', event => {
-            if (event.data === 'reload_page') {
-                location.reload();
-            }
-        });
-
-        // 2. लोडर को हटाने का फंक्शन
-        const frame = document.getElementById('appFrame');
-        frame.onload = () => {
-            document.getElementById('loading-overlay').style.display = 'none';
-        };
-
-        // 3. अगर 10 सेकंड में लोड न हो, तो बटन दिखाओ और रिफ्रेश करो
-        setTimeout(() => {
-            if(document.getElementById('loading-overlay').style.display !== 'none') {
-                document.getElementById('reloadBtn').style.display = 'block';
-                setTimeout(() => location.reload(), 2000); 
-            }
-        }, 10000);
+        // Aapka Service Worker register karne ka code yahan rahega
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
     </script>
 </body>
 </html>
