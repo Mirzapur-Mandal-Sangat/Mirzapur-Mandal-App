@@ -15,18 +15,24 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  if (event.request.method !== 'GET' || event.request.url.includes('script.google.com')) return;
+  // Google Script aur non-GET requests ko bilkul touch na kare
+  if (event.request.method !== 'GET' || event.request.url.includes('script.google.com')) {
+    return;
+  }
 
   event.respondWith(
-    caches.match(event.request).then(cachedResponse => {
-      const fetchPromise = fetch(event.request).then(networkResponse => {
+    fetch(event.request)
+      .then(networkResponse => {
+        // Response milne par usse cache mein save karein
+        const responseToCache = networkResponse.clone();
         caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, networkResponse.clone());
+          cache.put(event.request, responseToCache);
         });
         return networkResponse;
-      }).catch(() => cachedResponse); 
-      
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => {
+        // Agar internet nahi hai, tabhi cache se uthaye
+        return caches.match(event.request);
+      })
   );
 });
