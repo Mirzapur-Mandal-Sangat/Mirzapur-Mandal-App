@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
+    
     <style>
         body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #ffffff; font-family: sans-serif; }
+        
+        /* Loading Overlay */
         #loading-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #ffffff; display: flex; flex-direction: column;
@@ -17,45 +20,54 @@
             animation: spin 1s linear infinite; margin-bottom: 15px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        iframe { width: 100%; height: 100vh; border: none; display: block; }
+        
+        /* Iframe settings - removed opacity transition to fix white screen bug */
+        #appFrame { 
+            width: 100%; height: 100vh; border: none; 
+            display: block; visibility: visible; 
+        }
     </style>
 </head>
 <body>
 
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <div id="loading-text">Loading...</div>
+        <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
     </div>
 
     <iframe id="appFrame" 
             src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
-            allow="geolocation; microphone; camera"></iframe>
+            allow="geolocation; microphone; camera"
+            onload="hideLoader()"></iframe>
 
     <script>
-        const frame = document.getElementById('appFrame');
-        let loadCheckTimer;
-
-        // 🛡️ ERR_BLOCKED_BY_RESPONSE ya loading fail hone par auto-refresh
-        function startWatchdog() {
-            loadCheckTimer = setTimeout(() => {
-                console.log("Loading taking too long, refreshing...");
-                location.reload();
-            }, 7000); // 7 सेकंड में लोड न हुआ तो रिफ्रेश
-        }
-
-        // Iframe load hote hi timer band
-        frame.onload = () => {
-            clearTimeout(loadCheckTimer);
-            document.getElementById('loading-overlay').style.display = 'none';
-        };
-
-        // Service Worker setup
+        // Service worker setup
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed:', err));
+            navigator.serviceWorker.register('sw.js').catch(err => console.log('SW setup failed:', err));
         }
 
-        // Start watch
-        startWatchdog();
+        // Force reload watchdog
+        let loadCheckTimer = setTimeout(() => {
+            console.log("Loading timed out, refreshing...");
+            location.reload();
+        }, 10000); // 10 सेकंड का वेट
+
+        function hideLoader() {
+            clearTimeout(loadCheckTimer);
+            const loader = document.getElementById('loading-overlay');
+            if (loader) {
+                // Completely remove the element so it doesn't block clicks
+                loader.remove();
+            }
+            // Force focus
+            document.getElementById('appFrame').focus();
+        }
+
+        window.addEventListener("message", (event) => {
+            if (event.data === "logged_out") {
+                location.reload(); 
+            }
+        }, false);
     </script>
 </body>
 </html>
