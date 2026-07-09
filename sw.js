@@ -1,38 +1,14 @@
-const CACHE_NAME = 'mirzapur-mandal-v2';
+const CACHE_NAME = 'webbook-v1';
+const urlsToCache = ['index.html', 'manifest.json'];
 
-self.addEventListener('install', event => { 
-  self.skipWaiting(); 
-});
-
-self.addEventListener('activate', event => {
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(cacheNames.map(cache => {
-        if (cache !== CACHE_NAME) return caches.delete(cache);
-      }));
-    }).then(() => self.clients.claim())
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
   );
 });
 
 self.addEventListener('fetch', event => {
-  // Google Script aur non-GET requests ko bilkul touch na kare
-  if (event.request.method !== 'GET' || event.request.url.includes('script.google.com')) {
-    return;
-  }
-
   event.respondWith(
-    fetch(event.request)
-      .then(networkResponse => {
-        // Response milne par usse cache mein save karein
-        const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseToCache);
-        });
-        return networkResponse;
-      })
-      .catch(() => {
-        // Agar internet nahi hai, tabhi cache se uthaye
-        return caches.match(event.request);
-      })
+    caches.match(event.request).then(response => response || fetch(event.request))
   );
 });
