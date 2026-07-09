@@ -4,87 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <!-- Cache clear karne ke liye version v=65 -->
-    <link rel="manifest" href="manifest.json?v=65">
     <style>
-        body, html { 
-            margin: 0; padding: 0; 
-            height: 100%; width: 100%; 
-            overflow: hidden; 
-            background-color: #f4f7f9; 
-            font-family: 'Segoe UI', sans-serif; 
-        }
-        
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #ffffff; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 99999;
-        }
-        .spinner {
-            border: 5px solid #f3f3f3; border-top: 5px solid #0088cc;
-            border-radius: 50%; width: 50px; height: 50px;
-            animation: spin 1s linear infinite; margin-bottom: 15px;
-        }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #ffffff; display: flex; justify-content: center; align-items: center; }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0088cc; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        
-        /* Iframe Container */
-        #iframeContainer { width: 100%; height: 100%; display: block; }
-        iframe { width: 100%; height: 100%; border: none; }
     </style>
 </head>
 <body>
-
-    <!-- App Loader -->
-    <div id="loading-overlay">
-        <div class="spinner"></div>
-        <div style="color: #0088cc; font-weight: bold; font-size: 16px;">सिस्टम लोड हो रहा है...</div>
-    </div>
-
-    <!-- यहाँ डायनामिक तौर पर आईफ्रेम लोड होगा -->
-    <div id="iframeContainer"></div>
+    <div class="spinner"></div>
 
     <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=65');
-        }
-
-        // Advanced Iframe Injection (रिफ्रेश एरर को ब्लॉक करने के लिए)
-        function injectApp() {
-            const container = document.getElementById('iframeContainer');
-            
-            // आपका नया Google Script URL
-            const appUrl = "https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec";
-            
-            // टाइमस्टैम्प जोड़े ताकि ब्राउज़र पुराना क्रैश पेज कैशे से न उठाए
-            const finalUrl = appUrl + "?t=" + new Date().getTime();
-            
-            // नया आईफ्रेम बनाएं
-            const iframe = document.createElement('iframe');
-            iframe.setAttribute('src', finalUrl);
-            iframe.setAttribute('allow', 'camera'); // कैमरे की परमिशन
-            
-            // जब सही से लोड हो जाए, तब लोडर हटाएं
-            iframe.onload = function() {
-                document.getElementById('loading-overlay').style.display = 'none';
-            };
-
-            // एरर से बचने के लिए पुराना कंटेंट हटाकर नया जोड़ें
-            container.innerHTML = '';
-            container.appendChild(iframe);
-        }
-
-        // पेज खुलते ही फंक्शन चलाएं
-        window.onload = injectApp;
-
-        // अगर कोई मोबाइल पर स्क्रीन नीचे खींचकर (Pull) रिफ्रेश करता है
-        let startY = 0;
-        window.addEventListener('touchstart', (e) => { startY = e.touches[0].pageY; }, {passive: true});
-        window.addEventListener('touchend', (e) => {
-            if (e.changedTouches[0].pageY - startY > 150 && window.scrollY === 0) { 
-                document.getElementById('loading-overlay').style.display = 'flex';
-                injectApp(); // पूरे पेज को रिफ्रेश करने के बजाय सिर्फ आईफ्रेम को रीस्टार्ट करें
-            }
-        });
+        // सीधे Google Script पर भेजें (यह Iframe एरर को पूरी तरह खत्म कर देगा)
+        // Telegram ब्राउज़र इसे आसानी से हैंडल कर लेगा
+        const scriptUrl = "https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec";
+        
+        // एक छोटा सा डिले ताकि लोडर दिखे
+        setTimeout(() => {
+            window.location.replace(scriptUrl);
+        }, 500);
     </script>
 </body>
 </html>
