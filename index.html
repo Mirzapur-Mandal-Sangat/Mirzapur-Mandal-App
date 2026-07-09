@@ -20,7 +20,6 @@
     <link rel="apple-touch-icon" href="icon.png">
     
     <style>
-        /* touch-action: manipulation jodne se tap/click turant register hota hai */
         body, html { 
             margin: 0; padding: 0; height: 100%; width: 100%; 
             overflow: hidden; background-color: #ffffff; 
@@ -52,20 +51,24 @@
         <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
     </div>
 
+    <!-- Iframe me sandbox aur baki permissions add ki gayi hain -->
     <iframe id="appFrame" 
             src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
-            allow="geolocation; microphone; camera"
-            loading="eager"
-            onload="hideLoader()"></iframe>
+            allow="geolocation; microphone; camera; display-capture; clipboard-read; clipboard-write"
+            sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-top-navigation"
+            onload="handleIframeLoad()"></iframe>
 
     <script>
-        // Service worker ko UI load hone ke baad register karein taaki App khulte hi hang na ho
+        // 1. Service Worker Setup
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW setup failed:', err));
+                navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('SW Registered successfully'))
+                .catch(err => console.log('SW setup failed:', err));
             });
         }
 
+        // 2. Hide Loader Function
         function hideLoader() {
             const loader = document.getElementById('loading-overlay');
             const frame = document.getElementById('appFrame');
@@ -77,6 +80,24 @@
             }, 300);
         }
 
+        // 3. Iframe Load Handler (with First-Load Fix)
+        function handleIframeLoad() {
+            hideLoader();
+
+            // Agar ye user ka pehla visit hai (browser session mein), toh ek baar auto-refresh karega
+            // jisse ERR_BLOCKED_BY_RESPONSE wala error kabhi user ko nahi dikhega.
+            if (!sessionStorage.getItem('isFirstLoadDone')) {
+                sessionStorage.setItem('isFirstLoadDone', 'true');
+                
+                // Iframe ko choti si deri ke baad reload karte hain taaki Google cache set ho jaye
+                setTimeout(() => {
+                    const frame = document.getElementById('appFrame');
+                    frame.src = frame.src; 
+                }, 500); 
+            }
+        }
+
+        // 4. Safety Fallback (Agar network slow ho toh 8 sec baad loader hta de)
         setTimeout(() => {
             const loader = document.getElementById('loading-overlay');
             if (loader.style.display !== 'none') {
@@ -84,8 +105,10 @@
             }
         }, 8000); 
 
+        // 5. App se aane wale messages (Jaise logout)
         window.addEventListener("message", (event) => {
             if (event.data === "logged_out") {
+                sessionStorage.removeItem('isFirstLoadDone'); // Logout par session clear
                 location.reload(); 
             }
         }, false);
