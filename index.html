@@ -2,37 +2,82 @@
 <html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json?v=7">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-        iframe { width: 100%; height: 100vh; border: none; }
-        #installBtn { 
-            position: fixed; top: 10px; right: 10px; 
-            padding: 12px; background: #28a745; color: white; 
-            border: none; border-radius: 8px; z-index: 999; 
-            display: none; font-weight: bold;
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            width: 100%; 
+            overflow: hidden; 
+            background-color: #f4f7f9; 
+        }
+        /* Iframe jo Google Script ko dikhayega */
+        iframe { 
+            width: 100%; 
+            height: 100vh; 
+            border: none; 
+            display: block; 
+        }
+        /* Install Button Styling */
+        #installBtn {
+            position: fixed; 
+            top: 15px; 
+            right: 15px;
+            padding: 12px 20px; 
+            background: #28a745; 
+            color: white;
+            border: none; 
+            border-radius: 8px; 
+            z-index: 10000; 
+            display: none; 
+            font-weight: bold; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <button id="installBtn">Install Mirzapur Mandal App</button>
+
+    <button id="installBtn">📲 App Install Karein</button>
+
     <iframe src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"></iframe>
-    
+
     <script>
+        // Service Worker register karna (Install option ke liye zaroori hai)
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js');
+            navigator.serviceWorker.register('sw.js?v=7').catch(err => console.log("SW Error:", err));
         }
+
         let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        // Jab browser detect karega ki app install ho sakti hai
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredPrompt = e;
-            document.getElementById('installBtn').style.display = 'block';
+            installBtn.style.display = 'block'; // Button dikhayein
         });
-        document.getElementById('installBtn').addEventListener('click', () => {
-            deferredPrompt.prompt();
-            document.getElementById('installBtn').style.display = 'none';
+
+        // Button par click karne par install prompt dikhana
+        installBtn.addEventListener('click', () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        installBtn.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        });
+
+        // App install hone ke baad button chhupana
+        window.addEventListener('appinstalled', () => {
+            installBtn.style.display = 'none';
+            console.log('App successfully installed');
         });
     </script>
 </body>
