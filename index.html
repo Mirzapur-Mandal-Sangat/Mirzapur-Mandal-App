@@ -4,53 +4,91 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=50">
+    <!-- Cache clear version v=55 -->
+    <link rel="manifest" href="manifest.json?v=55">
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; font-family: 'Segoe UI', sans-serif; }
+        
+        /* Loader */
         #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; }
         .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0088cc; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        iframe { width: 100%; height: 100vh; border: none; display: block; }
         
-        /* Elevated FAB Button */
-        .fab { 
-            position: fixed; bottom: 140px; right: 25px; width: 65px; height: 65px; 
-            background: #28a745; color: white; border-radius: 50%; display: flex; 
-            align-items: center; justify-content: center; font-size: 35px; border: none; 
-            box-shadow: 0 5px 20px rgba(0,0,0,0.4); z-index: 9999; cursor: pointer;
+        iframe { width: 100%; height: 100vh; border: none; display: none; } /* Default hidden until loaded */
+        
+        /* Permanent Ilaj: Custom Error Screen (No Grey Screen) */
+        #error-screen { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #ffffff; z-index: 100000; flex-direction: column; 
+            justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box; 
         }
+        .error-icon { font-size: 50px; color: #ff9800; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
+    <!-- Loading Screen -->
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <div style="color: #0088cc; font-weight: bold;">सिस्टम लोड हो रहा है...</div>
+        <div style="color: #0088cc; font-weight: bold; font-size: 16px;">सिस्टम लोड हो रहा है...</div>
     </div>
 
-    <!-- Naya Google Script URL -->
-    <iframe id="appFrame" 
-            src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
-            onload="hideLoader()" allow="camera"></iframe>
+    <!-- Error Screen: Grey screen ki jagah ye dikhega -->
+    <div id="error-screen">
+        <div class="error-icon">⚠️</div>
+        <h3 style="color:#333; margin: 0 0 10px 0;">कनेक्शन रीसेट हो गया</h3>
+        <p style="color:#666; font-size: 14px; margin-bottom: 20px;">ब्राउज़र सिक्योरिटी के कारण पेज लोड नहीं हो पाया। कृपया दोबारा प्रयास करें।</p>
+        <button onclick="forceReload()" style="padding: 12px 25px; background: #0088cc; color: white; border: none; border-radius: 50px; font-size: 15px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">🔄 फिर से लोड करें</button>
+    </div>
+
+    <!-- App Frame -->
+    <iframe id="appFrame" allow="camera"></iframe>
 
     <script>
-        // 🛡️ RESCUE TIMER: Agar 6 sec tak app load nahi hui, toh force reload karo
-        const loadTimer = setTimeout(() => {
-            const loader = document.getElementById('loading-overlay');
-            if(loader.style.display !== 'none') {
-                console.log("Error detected, forcing reload...");
-                location.reload(); 
-            }
-        }, 6000);
+        // Aapka Google Script URL
+        const scriptUrl = "https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec";
+        let loadTimer;
 
-        function hideLoader() {
-            clearTimeout(loadTimer); // Agar load ho gayi, toh timer rok do
-            document.getElementById('loading-overlay').style.display = 'none';
+        function loadApp() {
+            const frame = document.getElementById('appFrame');
+            // Timestamp Bypass: Cache issue ko permanent khatam karne ke liye
+            frame.src = scriptUrl + "?t=" + new Date().getTime();
+            
+            // 7 Second Rescue Timer: Agar Google block karta hai, toh custom screen dikhayega
+            loadTimer = setTimeout(() => {
+                document.getElementById('loading-overlay').style.display = 'none';
+                document.getElementById('appFrame').style.display = 'none';
+                document.getElementById('error-screen').style.display = 'flex';
+            }, 7000);
         }
 
-        // Service Worker
+        function forceReload() {
+            document.getElementById('error-screen').style.display = 'none';
+            document.getElementById('loading-overlay').style.display = 'flex';
+            loadApp();
+        }
+
+        // Jab iframe successfully load ho jaye
+        document.getElementById('appFrame').onload = function() {
+            clearTimeout(loadTimer); // Stop error timer
+            document.getElementById('loading-overlay').style.display = 'none';
+            document.getElementById('error-screen').style.display = 'none';
+            document.getElementById('appFrame').style.display = 'block';
+        };
+
+        // Start loading
+        loadApp();
+
+        // Pull to refresh disable karne ke liye (Taki user galti se refresh na kare)
+        window.addEventListener('touchmove', function(event) {
+            if (event.touches[0].clientY > 0 && window.scrollY === 0) {
+                // event.preventDefault(); // Uncomment if you want to strictly block pull-to-refresh
+            }
+        }, { passive: true });
+
+        // Service worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=50');
+            navigator.serviceWorker.register('sw.js?v=55');
         }
     </script>
 </body>
