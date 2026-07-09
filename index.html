@@ -4,40 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mirzapur Mandal App</title>
-    <link rel="manifest" href="manifest.json?v=41">
+    <link rel="manifest" href="manifest.json?v=50">
     <style>
-        body, html { 
-            margin: 0; padding: 0; 
-            height: 100%; width: 100%; 
-            overflow: hidden; 
-            background-color: #f4f7f9; 
-            font-family: 'Segoe UI', sans-serif; 
-        }
-        
-        /* Advanced Loader Style */
-        #loading-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #ffffff; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 99999;
-        }
-        .spinner {
-            border: 5px solid #f3f3f3; border-top: 5px solid #0088cc;
-            border-radius: 50%; width: 50px; height: 50px;
-            animation: spin 1s linear infinite; margin-bottom: 15px;
-        }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; background-color: #f4f7f9; }
+        #loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; }
+        .spinner { border: 5px solid #f3f3f3; border-top: 5px solid #0088cc; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #loading-text { color: #004d99; font-weight: bold; font-size: 16px; }
-
-        /* Full Screen Iframe */
         iframe { width: 100%; height: 100vh; border: none; display: block; }
         
-        /* Pull to Refresh Indicator */
-        #refresh-indicator {
-            position: fixed; top: -50px; left: 50%; transform: translateX(-50%);
-            background: #0088cc; color: white; padding: 8px 15px;
-            border-radius: 20px; font-size: 12px; font-weight: bold;
-            transition: top 0.3s; z-index: 99999;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        /* Elevated FAB Button */
+        .fab { 
+            position: fixed; bottom: 140px; right: 25px; width: 65px; height: 65px; 
+            background: #28a745; color: white; border-radius: 50%; display: flex; 
+            align-items: center; justify-content: center; font-size: 35px; border: none; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4); z-index: 9999; cursor: pointer;
         }
     </style>
 </head>
@@ -45,52 +25,33 @@
 
     <div id="loading-overlay">
         <div class="spinner"></div>
-        <div id="loading-text">सिस्टम लोड हो रहा है...</div>
+        <div style="color: #0088cc; font-weight: bold;">सिस्टम लोड हो रहा है...</div>
     </div>
 
-    <div id="refresh-indicator">🔄 Refreshing...</div>
-
+    <!-- Naya Google Script URL -->
     <iframe id="appFrame" 
             src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
             onload="hideLoader()" allow="camera"></iframe>
 
     <script>
-        // Service Worker Register
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js?v=41').then(() => {
-                console.log("Service Worker Registered for v41");
-            });
-        }
-
-        // Iframe load hone par loader hatana
-        function hideLoader() {
+        // 🛡️ RESCUE TIMER: Agar 6 sec tak app load nahi hui, toh force reload karo
+        const loadTimer = setTimeout(() => {
             const loader = document.getElementById('loading-overlay');
-            loader.style.opacity = '0';
-            loader.style.transition = 'opacity 0.5s ease';
-            setTimeout(() => { loader.style.display = 'none'; }, 500);
+            if(loader.style.display !== 'none') {
+                console.log("Error detected, forcing reload...");
+                location.reload(); 
+            }
+        }, 6000);
+
+        function hideLoader() {
+            clearTimeout(loadTimer); // Agar load ho gayi, toh timer rok do
+            document.getElementById('loading-overlay').style.display = 'none';
         }
 
-        // Pull to refresh logic (Mobile ke liye)
-        let startY = 0;
-        const indicator = document.getElementById('refresh-indicator');
-        
-        window.addEventListener('touchstart', (e) => { startY = e.touches[0].pageY; }, {passive: true});
-        window.addEventListener('touchmove', (e) => {
-            const moveY = e.touches[0].pageY;
-            // Agar page top par hai aur niche khinch rahe hain
-            if (moveY - startY > 60 && window.scrollY === 0) { 
-                indicator.style.top = '20px'; 
-            }
-        }, {passive: true});
-        
-        window.addEventListener('touchend', (e) => {
-            if (e.changedTouches[0].pageY - startY > 150 && window.scrollY === 0) { 
-                indicator.innerHTML = "🔄 Reloading...";
-                location.reload(); 
-            } else { 
-                indicator.style.top = '-50px'; 
-            }
-        });
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js?v=50');
+        }
     </script>
 </body>
 </html>
