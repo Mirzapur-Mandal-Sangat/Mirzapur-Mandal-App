@@ -2,7 +2,7 @@ name: Deploy Mirzapur Mandal App
 
 on:
   push:
-    branches: [ "main" ] # अगर आपकी ब्रांच का नाम master है, तो यहाँ master लिखें
+    branches: [ "main" ] 
 
 permissions:
   contents: write
@@ -16,9 +16,9 @@ jobs:
 
       - name: Insert Secret Link into HTML
         env:
-          SECRET_URL: ${{ secrets.Link }}
+          SECRET_URL: ${{ secrets.LINK }}
         run: |
-          sed -i "s|\${{ secrets.Link }}|$SECRET_URL|g" index.html
+          sed -i "s|__SECRET_LINK_HERE__|$SECRET_URL|g" index.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
