@@ -52,13 +52,19 @@
         <div id="loading-text">Mirzapur Mandal App लोड हो रहा है...</div>
     </div>
 
+    <!-- Hardcoded URL ko hata kar GitHub Secret Variable set kiya gaya hai -->
     <iframe id="appFrame" 
-            src="https://script.google.com/macros/s/AKfycbxNpiAoEV8xrhD-dsQhUy2Z4Y5iYiVQzyfOQu3FBJvRyrHnEYVE3d5l6ISH5aaaumc/exec"
+            src="${{ secrets.Link }}"
             allow="geolocation; microphone; camera"
-            loading="eager"
-            onload="hideLoader()"></iframe>
+            loading="eager"></iframe>
 
     <script>
+        // Zero Deletion Logic: Configuration ko freeze kiya gaya hai taaki unauthorized modifications na ho sakein
+        const AppSecurity = Object.freeze({
+            frameId: 'appFrame',
+            loaderId: 'loading-overlay'
+        });
+
         // Service worker ko UI load hone ke baad register karein taaki App khulte hi hang na ho
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -67,8 +73,8 @@
         }
 
         function hideLoader() {
-            const loader = document.getElementById('loading-overlay');
-            const frame = document.getElementById('appFrame');
+            const loader = document.getElementById(AppSecurity.loaderId);
+            const frame = document.getElementById(AppSecurity.frameId);
             
             loader.style.opacity = '0';
             setTimeout(() => {
@@ -77,8 +83,11 @@
             }, 300);
         }
 
+        // HTML tag se onload hata kar JS me strict event listener joda gaya hai
+        document.getElementById(AppSecurity.frameId).addEventListener('load', hideLoader);
+
         setTimeout(() => {
-            const loader = document.getElementById('loading-overlay');
+            const loader = document.getElementById(AppSecurity.loaderId);
             if (loader.style.display !== 'none') {
                 hideLoader();
             }
